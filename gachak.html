@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gacha Machine</title>
+    <style>
+        #gacha-container {
+            text-align: center;
+        }
+        #spin-button {
+            font-size: 24px;
+            margin: 20px;
+            padding: 10px 20px;
+            cursor: pointer;
+        }
+        #item-display {
+            font-size: 20px;
+            margin-top: 20px;
+        }
+        #item-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        .item {
+            margin: 10px;
+            max-width: 300px;
+        }
+        .item img {
+            max-width: 100%;
+            height: auto;
+        }
+        #pull-counter {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+        #rarity-stats {
+            font-size: 18px;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div id="gacha-container">
+        <h1>Gacha Machine</h1>
+        <button id="spin-button">Spin</button>
+        <div id="item-display">Click 'Spin' to get an item!</div>
+        <div id="item-container"></div>
+        <div id="result-container">
+            <h2>Results:</h2>
+            <ul id="results-list"></ul>
+        </div>
+        <div id="pull-counter">Total Pulls: 0</div>
+        <div id="rarity-stats">Rarity Stats:</div>
+    </div>
+
+    <!-- Add the audio element with the MP3 file source -->
+    <audio id="gacha-audio" src="https://github.com/Rynoa1/audio/blob/main/Kuru%20Kuruuu%20Herta2.mp3"></audio>
+
+    <script>
+        const items = [
+            { name: "Himeko", image: "https://assetsio.reedpopcdn.com/honkai-star-rail-himeko-build.jpg?width=1200&height=900&fit=crop&quality=100&format=png&enable=upscale&auto=webp", rate:0.006, rarity: "ssr"},
+            { name: "Bronya", image: "https://www.theloadout.com/wp-content/sites/theloadout/2023/04/Honkai-Star-Rail-Bronya-Build.jpg", rate:0.006, rarity: "ssr" },
+            { name: "Seele", image: "https://www.pockettactics.com/wp-content/sites/pockettactics/2023/04/Honkai-Star-Rail-tier-list-Seele-007.jpg", rate:0.006, rarity: "ssr" },
+            { name: "Silver Wolf", image: "https://assetsio.reedpopcdn.com/Honkai-Star-Rail-Silver-Wolf-best-build%2C-Ascension-materials%2C-Trace-materials%2C-team%2C-and-Light-Cone-cover.jpg", rate:0.006, rarity: "ssr" },
+            { name: "Kafka", image: "https://upload-os-bbs.hoyolab.com/upload/2023/06/29/173353178/335b88574bbced853cee77342ff9baaa_4855223802644456214.png", rate:0.006, rarity: "ssr" },
+            { name: "Herta", image: "https://staticg.sportskeeda.com/editor/2023/04/54332-16826412417817-1920.jpg", rate:0.24, rarity: "sr"},
+            { name: "March 7th", image: "https://assetsio.reedpopcdn.com/Honkai-Star-Rail-March-7th-Ult-1.jpg?width=1200&height=630&fit=crop&enable=upscale&auto=webp", rate:0.24, rarity: "sr" },
+            { name: "Yukong", image: "https://images.pushsquare.com/32720b8e7e89b/honkai-star-rail-yukong-best-builds-1.large.jpg", rate:0.24, rarity: "sr" },
+            { name: "Stelle", image: "https://assetsio.reedpopcdn.com/honkai-star-rail-stelle-looks-at-her-phone.jpg?width=1200&height=1200&fit=crop&quality=100&format=png&enable=upscale&auto=webp", rate:0.24, rarity: "sr" },
+            { name: "Legendary Trashcan", image: "https://media.thenerdstash.com/wp-content/uploads/2023/05/Honkai-Star-Rail-Trash-Can-Helmet-Diogenes-Utopia-Achievement.jpg", rate:0.001, rarity:"legendary" }
+        ];
+
+        const results = {};
+        let totalPulls = 0;
+        const rarityStats = {};
+
+        function getRandomItem() {
+            const totalRate = items.reduce((sum, item) => sum + item.rate, 0);
+            let randomNumber = Math.random() * totalRate;
+            
+            for (const item of items) {
+                if (randomNumber < item.rate) {
+                    return item;
+                }
+                randomNumber -= item.rate;
+            }
+        }
+
+        // Get a reference to the audio element
+        const audio = document.getElementById("gacha-audio");
+
+        // Attach a click event listener to the "Spin" button
+        document.getElementById("spin-button").addEventListener("click", () => {
+            // Reset the audio playback to the beginning
+            audio.currentTime = 0;
+
+            // Play the audio
+            audio.play();
+
+            // Rest of your code for the gacha machine
+            totalPulls += 10;
+            const itemContainer = document.getElementById("item-container");
+            itemContainer.innerHTML = '';
+
+            for (let i = 0; i < 10; i++) {
+                const selectedItem = getRandomItem();
+
+                if (results[selectedItem.name]) {
+                    results[selectedItem.name]++;
+                } else {
+                    results[selectedItem.name] = 1;
+                }
+
+                if (rarityStats[selectedItem.rarity]) {
+                    rarityStats[selectedItem.rarity]++;
+                } else {
+                    rarityStats[selectedItem.rarity] = 1;
+                }
+
+                const itemElement = document.createElement("div");
+                itemElement.className = "item";
+                itemElement.innerHTML = `
+                    <img src="${selectedItem.image}" alt="${selectedItem.name}">
+                    <p>${selectedItem.name}</p>
+                `;
+                itemContainer.appendChild(itemElement);
+            }
+
+            const resultsList = document.getElementById("results-list");
+            resultsList.innerHTML = '';
+            for (const itemName in results) {
+                const itemCount = results[itemName];
+                const listItem = document.createElement("li");
+                listItem.textContent = `${itemName}: ${itemCount}`;
+                resultsList.appendChild(listItem);
+            }
+
+            const rarityStatsDiv = document.getElementById("rarity-stats");
+            rarityStatsDiv.innerHTML = 'Rarity Stats:<br>';
+            for (const rarity in rarityStats) {
+                const count = rarityStats[rarity];
+                rarityStatsDiv.innerHTML += `${rarity}: ${count} (Rate: ${(count / totalPulls * 100).toFixed(2)}%)<br>`;
+            }
+
+            const pullCounter = document.getElementById("pull-counter");
+            pullCounter.textContent = `Total Pulls: ${totalPulls}`;
+        });
+    </script>
+</body>
+</html>
