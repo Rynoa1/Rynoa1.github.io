@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script>
+        // Function to extract the target URL from the query parameter
+        function getTargetUrl() {
+            // Parse the current URL
+            var url = new URL(window.location.href);
+
+            // Get the 'target' query parameter value, if it exists
+            var targetParam = url.searchParams.get("target");
+
+            // If 'target' parameter is found, use it as the redirect URL
+            if (targetParam) {
+                return targetParam;
+            } else {
+                // Default URL if 'target' parameter is not provided
+                return "http://default.com";
+            }
+        }
+
+        // Function to perform the redirection
+        function redirectToTarget() {
+            var targetUrl = getTargetUrl();
+            window.location.href = targetUrl;
+        }
+    </script>
+</head>
+<body>
+    <p>If you are not redirected, <a href="#" onclick="redirectToTarget(); return false;">click here</a>.</p>
+</body>
+</html>
