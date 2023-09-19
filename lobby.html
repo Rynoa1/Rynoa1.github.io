@@ -22,7 +22,15 @@
         // Function to perform the redirection
         function redirectToTarget() {
             var targetUrl = getTargetUrl();
-            window.location.href = targetUrl;
+
+            // Check if the target URL starts with 'steam://' protocol
+            if (targetUrl.startsWith("steam://")) {
+                // Open the Steam URL using JavaScript
+                window.location.href = targetUrl;
+            } else {
+                // Redirect to other URLs using standard HTTP
+                window.location.href = targetUrl;
+            }
         }
     </script>
 </head>
