@@ -43,7 +43,7 @@
 </head>
 <body>
     <h1>Bouncing Ball Game</h1>
-    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <canvas id="gameCanvas" width="1280" height="720"></canvas>
     <div id="gameOverScreen">
         <h2>You Lost!</h2>
         <p>Your Score: <span id="score">0</span></p>
@@ -64,8 +64,8 @@
         let ballY = canvas.height - barHeight - ballRadius;
         let ballSpeedX = 0;
         let ballSpeedY = 0;
-        let originalBallSpeedX = 5;
-        let originalBallSpeedY = -5;
+        let originalBallSpeedX = 10;
+        let originalBallSpeedY = -10;
         let blockWidth = 50;
         let blockHeight = 20;
         let blocks = [];
@@ -161,7 +161,7 @@
 
 
         function generateBlocks() {
-            const numBlocks = Math.floor(Math.random() * 7) + 4;
+            const numBlocks = Math.floor(Math.random() * 30) + 40;
             blocks = [];
 
             for (let i = 0; i < numBlocks; i++) {
