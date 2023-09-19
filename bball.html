@@ -1,0 +1,455 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Bouncing Ball Game</title>
+    <style>
+        /* Add your CSS styles here */
+        canvas {
+            display: block;
+            margin: 0 auto;
+            background-color: #f0f0f0;
+        }
+
+        #gameOverScreen {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            text-align: center;
+            padding-top: 100px;
+        }
+
+        .metal-bar {
+            background-color: black;
+            border: 2px solid #555;
+        }
+
+        .metal-ball {
+            fill: gray;
+            stroke: #555;
+            stroke-width: 2;
+        }
+
+        #scoreDisplay {
+            font-size: 24px;
+            font-weight: bold;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Bouncing Ball Game</h1>
+    <canvas id="gameCanvas" width="800" height="400"></canvas>
+    <div id="gameOverScreen">
+        <h2>You Lost!</h2>
+        <p>Your Score: <span id="score">0</span></p>
+        <p>High Score: <span id="highScore">0</span></p>
+        <button id="retryButton">Retry</button>
+    </div>
+    <div id="scoreDisplay">Score: <span id="currentScore">0</span></div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const barWidth = 100;
+        const barHeight = 10;
+        const ballRadius = 10;
+        let barX = (canvas.width - barWidth) / 2;
+        const barY = canvas.height - barHeight;
+        let ballX = barX + barWidth / 2;
+        let ballY = canvas.height - barHeight - ballRadius;
+        let ballSpeedX = 0;
+        let ballSpeedY = 0;
+        let originalBallSpeedX = 5;
+        let originalBallSpeedY = -5;
+        let blockWidth = 50;
+        let blockHeight = 20;
+        let blocks = [];
+        let isMovingLeft = false;
+        let isMovingRight = false;
+        let isGameOver = false;
+        let isGameStarted = false;
+        let score = 0;
+        let highScore = localStorage.getItem('highScore') || 0;
+
+        // Bonus speed multiplier for each block hit
+        let speedMultiplier = 1;
+
+        // Initial velocity applied to the ball when the game starts
+        let initialVelocityX = 0;
+
+        // Initial bar movement flag
+        let isInitialBarMovement = true;
+
+        // Generate initial blocks
+        generateBlocks();
+
+        function drawBar() {
+            ctx.fillStyle = '#0095DD';
+            ctx.fillRect(barX, barY, barWidth, barHeight);
+        }
+
+        function drawBall() {
+            ctx.beginPath();
+            ctx.arc(ballX, ballY, ballRadius, 0, Math.PI * 2);
+            ctx.fillStyle = '#0095DD';
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function drawBlocks() {
+            ctx.fillStyle = '#0095DD';
+            for (let i = 0; i < blocks.length; i++) {
+                if (!blocks[i].destroyed) {
+                    ctx.fillRect(blocks[i].x, blocks[i].y, blockWidth, blockHeight);
+                }
+            }
+        }
+        function collisionDetection() {
+    let blockCollisionDetected = false; // Track if a block collision is detected
+
+    for (let i = 0; i < blocks.length; i++) {
+        const block = blocks[i];
+        if (!block.destroyed) {
+            const ballCenterX = ballX;
+            const ballCenterY = ballY;
+
+            // Calculate the closest point on the block's perimeter to the ball
+            let closestX = Math.max(block.x, Math.min(ballCenterX, block.x + blockWidth));
+            let closestY = Math.max(block.y, Math.min(ballCenterY, block.y + blockHeight));
+
+            // Calculate the distance between the closest point and the ball's center
+            let distanceX = ballCenterX - closestX;
+            let distanceY = ballCenterY - closestY;
+            let distance = Math.sqrt(distanceX * distanceX + distanceY * distanceY);
+
+            if (distance < ballRadius) {
+                if (!blockCollisionDetected) {
+                    // Collide with only one block in the current frame
+                    blockCollisionDetected = true;
+
+                    // Calculate additional score based on 2% of the current score
+                    const additionalScore = Math.round(0.02 * score);
+                    score += additionalScore + 20; // Add 20 points and the additional score
+                    updateScoreDisplay(score);
+                    speedMultiplier += 0.02;
+
+                    // Reflect the ball's velocity based on the collision
+                    let reflectionX = distanceX / distance;
+                    let reflectionY = distanceY / distance;
+
+                    ballSpeedX = -ballSpeedX;
+                    ballSpeedY = -ballSpeedY;
+
+                    // Ensure that the ball is pushed out of the block to prevent multiple collisions
+                    ballX += reflectionX * (ballRadius - distance);
+                    ballY += reflectionY * (ballRadius - distance);
+
+                    block.destroyed = true;
+                }
+            }
+        }
+    }
+}
+
+
+
+
+
+        function generateBlocks() {
+            const numBlocks = Math.floor(Math.random() * 7) + 4;
+            blocks = [];
+
+            for (let i = 0; i < numBlocks; i++) {
+                let blockX, blockY;
+                let isOverlap = true;
+
+                while (isOverlap) {
+                    blockX = Math.random() * (canvas.width - blockWidth);
+                    blockY = Math.random() * (canvas.height - 200);
+
+                    isOverlap = blocks.some((block) => {
+                        return (
+                            blockX < block.x + blockWidth &&
+                            blockX + blockWidth > block.x &&
+                            blockY < block.y + blockHeight &&
+                            blockY + blockHeight > block.y
+                        );
+                    });
+                }
+
+                blocks.push({ x: blockX, y: blockY, destroyed: false });
+            }
+        }
+
+        function updateScoreDisplay(newScore) {
+            document.getElementById('currentScore').textContent = newScore;
+        }
+
+        function showGameOverScreen() {
+            document.getElementById('gameOverScreen').style.display = 'block';
+            document.getElementById('score').textContent = score;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+            document.getElementById('highScore').textContent = highScore;
+
+            document.getElementById('retryButton').addEventListener('click', () => {
+                resetGame();
+                document.getElementById('gameOverScreen').style.display = 'none';
+            });
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            isGameStarted = false;
+            isInitialBarMovement = true;
+            score = 0;
+            speedMultiplier = 1;
+            ballSpeedX = originalBallSpeedX;
+            ballSpeedY = originalBallSpeedY;
+            ballX = barX + barWidth / 2;
+            ballY = canvas.height - barHeight - ballRadius;
+            barX = (canvas.width - barWidth) / 2;
+            generateBlocks();
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (!isGameStarted && e.key === ' ') {
+                startGame();
+            }
+        });
+
+        function startGame() {
+            isGameStarted = true;
+            isInitialBarMovement = false;
+            ballSpeedX = originalBallSpeedX;
+            ballSpeedY = originalBallSpeedY;
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (!isGameStarted) {
+                if (e.key === 'a') {
+                    isMovingLeft = true;
+                    initialVelocityX = -2;
+                } else if (e.key === 'd') {
+                    isMovingRight = true;
+                    initialVelocityX = 2;
+                }
+            } else {
+                if (e.key === 'a') {
+                    isMovingLeft = true;
+                } else if (e.key === 'd') {
+                    isMovingRight = true;
+                }
+            }
+        });
+
+        document.addEventListener('keyup', function (e) {
+            if (!isGameStarted) {
+                if (e.key === 'a') {
+                    isMovingLeft = false;
+                    if (!isMovingRight) {
+                        initialVelocityX = 0;
+                    }
+                } else if (e.key === 'd') {
+                    isMovingRight = false;
+                    if (!isMovingLeft) {
+                        initialVelocityX = 0;
+                    }
+                }
+            } else {
+                if (e.key === 'a') {
+                    isMovingLeft = false;
+                } else if (e.key === 'd') {
+                    isMovingRight = false;
+                }
+            }
+        });
+
+        function updateGameArea() {
+            if (!isGameOver) {
+                ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+                if (isGameStarted) {
+                    ballX += ballSpeedX * speedMultiplier;
+                    ballY += ballSpeedY * speedMultiplier;
+
+                    if (ballX + ballRadius > canvas.width || ballX - ballRadius < 0) {
+                        ballSpeedX = -ballSpeedX;
+                    }
+                    if (ballY - ballRadius < 0) {
+                        ballSpeedY = -ballSpeedY;
+                    } else if (ballY + ballRadius > canvas.height) {
+                        if (ballX > barX && ballX < barX + barWidth) {
+                            const relativeIntersectX = ballX - (barX + barWidth / 2);
+                            const normalizedRelativeIntersectX = relativeIntersectX / (barWidth / 2);
+                            const bounceAngle = normalizedRelativeIntersectX * Math.PI / 4;
+
+                            // Update the ball's speed based on the bounce angle and retain its current speed
+                            const currentSpeed = Math.sqrt(ballSpeedX * ballSpeedX + ballSpeedY * ballSpeedY);
+                            ballSpeedX = Math.sin(bounceAngle) * currentSpeed;
+                            ballSpeedY = -Math.cos(bounceAngle) * currentSpeed;
+                        } else {
+                            isGameOver = true;
+                            showGameOverScreen();
+                        }
+                    }
+
+                    if (!isInitialBarMovement) {
+                        if (isMovingLeft && barX > 0) {
+                            barX -= 5;
+                        }
+                        if (isMovingRight && barX + barWidth < canvas.width) {
+                            barX += 5;
+                        }
+                    }
+
+                    if (blocks.every((block) => block.destroyed)) {
+                        generateBlocks();
+                    }
+                } else {
+                    ballX = barX + barWidth / 2 + initialVelocityX;
+
+                    if (isMovingLeft && barX > 0) {
+                        barX -= 5;
+                    }
+                    if (isMovingRight && barX + barWidth < canvas.width) {
+                        barX += 5;
+                    }
+                }
+
+                drawBar();
+                drawBall();
+                drawBlocks();
+                collisionDetection();
+            } else {
+                showGameOverScreen();
+            }
+
+            requestAnimationFrame(updateGameArea);
+        }
+
+        function generateBlocks() {
+            const numBlocks = Math.floor(Math.random() * 7) + 4;
+            blocks = [];
+
+            for (let i = 0; i < numBlocks; i++) {
+                let blockX, blockY;
+                let isOverlap = true;
+
+                while (isOverlap) {
+                    blockX = Math.random() * (canvas.width - blockWidth);
+                    blockY = Math.random() * (canvas.height - 200);
+
+                    isOverlap = blocks.some((block) => {
+                        return (
+                            blockX < block.x + blockWidth &&
+                            blockX + blockWidth > block.x &&
+                            blockY < block.y + blockHeight &&
+                            blockY + blockHeight > block.y
+                        );
+                    });
+                }
+
+                blocks.push({ x: blockX, y: blockY, destroyed: false });
+            }
+        }
+
+        function updateScoreDisplay(newScore) {
+            document.getElementById('currentScore').textContent = newScore;
+        }
+
+        function showGameOverScreen() {
+            document.getElementById('gameOverScreen').style.display = 'block';
+            document.getElementById('score').textContent = score;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('highScore', highScore);
+            }
+            document.getElementById('highScore').textContent = highScore;
+
+            document.getElementById('retryButton').addEventListener('click', () => {
+                resetGame();
+                document.getElementById('gameOverScreen').style.display = 'none';
+            });
+        }
+
+        function resetGame() {
+            isGameOver = false;
+            isGameStarted = false;
+            isInitialBarMovement = true;
+            score = 0;
+            speedMultiplier = 1;
+            ballSpeedX = originalBallSpeedX;
+            ballSpeedY = originalBallSpeedY;
+            ballX = barX + barWidth / 2;
+            ballY = canvas.height - barHeight - ballRadius;
+            barX = (canvas.width - barWidth) / 2;
+            generateBlocks();
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (!isGameStarted && e.key === ' ') {
+                startGame();
+            }
+        });
+
+        function startGame() {
+            isGameStarted = true;
+            isInitialBarMovement = false;
+            ballSpeedX = originalBallSpeedX;
+            ballSpeedY = originalBallSpeedY;
+        }
+
+        document.addEventListener('keydown', function (e) {
+            if (!isGameStarted) {
+                if (e.key === 'a') {
+                    isMovingLeft = true;
+                    initialVelocityX = -2;
+                } else if (e.key === 'd') {
+                    isMovingRight = true;
+                    initialVelocityX = 2;
+                }
+            } else {
+                if (e.key === 'a') {
+                    isMovingLeft = true;
+                } else if (e.key === 'd') {
+                    isMovingRight = true;
+                }
+            }
+        });
+
+        document.addEventListener('keyup', function (e) {
+            if (!isGameStarted) {
+                if (e.key === 'a') {
+                    isMovingLeft = false;
+                    if (!isMovingRight) {
+                        initialVelocityX = 0;
+                    }
+                } else if (e.key === 'd') {
+                    isMovingRight = false;
+                    if (!isMovingLeft) {
+                        initialVelocityX = 0;
+                    }
+                }
+            } else {
+                if (e.key === 'a') {
+                    isMovingLeft = false;
+                } else if (e.key === 'd') {
+                    isMovingRight = false;
+                }
+            }
+        });
+
+        updateGameArea();
+    </script>
+</body>
+</html>
